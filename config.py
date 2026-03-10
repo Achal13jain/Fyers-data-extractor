@@ -9,7 +9,7 @@ load_dotenv()
 # Fyers API Credentials
 FYERS_CLIENT_ID: str = os.getenv("FYERS_CLIENT_ID", "")
 FYERS_SECRET_KEY: str = os.getenv("FYERS_SECRET_KEY", "")
-FYERS_REDIRECT_URI: str = os.getenv("FYERS_REDIRECT_URI", "http://127.0.0.1:8080/")
+FYERS_REDIRECT_URI: str = os.getenv("FYERS_REDIRECT_URI", "http://127.0.0.1:5000/")
 
 # File Paths
 TOKEN_FILE_PATH: str = "token.json"

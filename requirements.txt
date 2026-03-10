@@ -1,4 +1,8 @@
-fyers-apiv3
-pandas
-python-dotenv
-tqdm
+fyers-apiv3==3.0.2
+pandas==2.2.3
+python-dotenv==1.0.1
+tqdm==4.67.1
+fastapi==0.115.8
+uvicorn==0.34.0
+pydantic==2.10.6
+pytest==8.3.4
