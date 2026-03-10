@@ -29,7 +29,7 @@ It features both a robust **Command Line Interface (CLI)** and a gorgeous **Web 
 ### 2. Create a Fyers API App
 1. Go to the [Fyers API Dashboard](https://myapi.fyers.in/).
 2. Create a new App.
-3. Set the **Redirect URI** to `http://127.0.0.1:8080/`.
+3. Set the **Redirect URI** to `http://127.0.0.1:5000/`.
 4. After creation, copy your **App ID** (Client ID) and **Secret Key**.
 
 ### 3. Installation
@@ -60,7 +60,7 @@ It features both a robust **Command Line Interface (CLI)** and a gorgeous **Web 
    ```env
    FYERS_CLIENT_ID=your_client_id_here
    FYERS_SECRET_KEY=your_secret_key_here
-   FYERS_REDIRECT_URI=http://127.0.0.1:8080/
+   FYERS_REDIRECT_URI=http://127.0.0.1:5000/
    LOG_LEVEL=INFO
    ```
 
