@@ -160,7 +160,7 @@ label {
     letter-spacing: 0.05em;
 }
 
-input {
+input, select {
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 14px;
@@ -173,13 +173,25 @@ input {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) inset;
     width: 100%;
     box-sizing: border-box;
+    font-family: inherit;
 }
 
-input:focus {
+input:focus, select:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
-    /* Reduced from 4px to stop expanding out */
     background: #fff;
+}
+
+/* Custom styling for the Select Dropdown Arrow */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+    cursor: pointer;
 }
 
 input::placeholder {

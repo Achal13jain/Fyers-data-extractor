@@ -25,6 +25,7 @@ app.mount("/frontend", StaticFiles(directory="static", html=True), name="static"
 
 class DownloadRequest(BaseModel):
     symbol: str
+    resolution: str = "1"
     from_date: str
     to_date: str
 
@@ -101,7 +102,7 @@ def download_data(req: DownloadRequest):
 
         df = downloader.download_historical_data(
             symbol=symbol,
-            resolution="1",
+            resolution=req.resolution,
             start_date=start_date,
             end_date=end_date
         )
@@ -118,7 +119,7 @@ def download_data(req: DownloadRequest):
         tmp.close()
 
         safe_sym = symbol.replace(":", "_")
-        friendly_name = f"{safe_sym}_1min_{req.from_date}_to_{req.to_date}.csv"
+        friendly_name = f"{safe_sym}_{req.resolution}m_{req.from_date}_to_{req.to_date}.csv"
         # URL encode the filename to prevent header parsing issues
         friendly_name_encoded = urllib.parse.quote(friendly_name)
 

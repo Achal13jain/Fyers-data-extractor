@@ -91,7 +91,8 @@ The easiest way to extract data is using the interactive local web server.
    ```
 2. Open your browser to `http://127.0.0.1:8000`.
 3. Type in any symbol like `SILVER` or `CRUDEOIL` to search the active futures contracts dynamically.
-4. Select your date ranges and click Download! The CSV will immediately compile and save to your computer.
+4. Select your desired **Resolution/Timeframe** (e.g., 1 Minute, 5 Minutes, Daily).
+5. Select your date ranges and click Download! The CSV will immediately compile and save to your computer.
 
 ---
 

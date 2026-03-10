@@ -39,6 +39,24 @@
 
             <div class="input-group">
                 <div class="input-field">
+                    <label for="resolution">Resolution</label>
+                    <select id="resolution">
+                        <option value="1" selected>1 Minute</option>
+                        <option value="2">2 Minutes</option>
+                        <option value="3">3 Minutes</option>
+                        <option value="5">5 Minutes</option>
+                        <option value="10">10 Minutes</option>
+                        <option value="15">15 Minutes</option>
+                        <option value="20">20 Minutes</option>
+                        <option value="30">30 Minutes</option>
+                        <option value="60">60 Minutes</option>
+                        <option value="120">2 Hours</option>
+                        <option value="240">4 Hours</option>
+                        <option value="1D">Daily</option>
+                    </select>
+                </div>
+
+                <div class="input-field">
                     <label for="fromDate">Start Date <span
                             style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">(DD-MM-YYYY)</span></label>
                     <input type="text" id="fromDate" placeholder="01-02-2026" required pattern="\d{2}-\d{2}-\d{4}">
@@ -114,6 +132,7 @@
             const rawSymbolValue = document.getElementById('symbolSearch').value.trim();
             const finalSymbol = rawSymbolValue || "auto";
 
+            const resolution = document.getElementById('resolution').value;
             const fromDate = document.getElementById('fromDate').value;
             const toDate = document.getElementById('toDate').value;
 
@@ -131,6 +150,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         symbol: finalSymbol,
+                        resolution: resolution,
                         from_date: fromDate,
                         to_date: toDate
                     })
@@ -146,7 +166,7 @@
 
                 // Try to get filename from headers
                 const contentDisposition = response.headers.get('Content-Disposition');
-                let filename = `data_1min_${fromDate}_to_${toDate}.csv`;
+                let filename = `data_${resolution}m_${fromDate}_to_${toDate}.csv`;
                 if (contentDisposition) {
                     const match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
                     if (match && match[1]) filename = decodeURIComponent(match[1]);
