@@ -66,6 +66,21 @@ It features both a robust **Command Line Interface (CLI)** and a gorgeous **Web 
 
 ---
 
+## 🔐 First-Time Authentication Flow
+
+Because Fyers requires strict user authentication to access their API, your **first** download attempt will trigger the OAuth flow:
+1. **Redirect**: A browser window will automatically open and redirect you to the Fyers Login Page.
+2. **Login**: Enter your Fyers Client ID and your **4-digit PIN** as normal.
+3. **The Auth Code**: After logging in, the browser will redirect you to `http://127.0.0.1:8080/` (it might look like a broken page, this is perfectly normal). **Look at the URL in your browser's address bar**. It will look something like this:
+   `http://127.0.0.1:8080/?s=ok&code=YOUR_LONG_AUTH_CODE_HERE&state=...`
+4. **Copy the Code**: Copy the exact value of the `code` parameter from that URL.
+5. **Paste into Terminal**: Return to the terminal/command prompt where you ran the app (e.g. where `python web.py` is running). You will see it pausing and asking you to paste the auth code.
+6. **Token Saved**: Press Enter. The app will securely generate an access token and save it to `token.json`! 
+
+*Note: You only have to do this once! Future downloads will be completely automatic until the Fyers token expires.*
+
+---
+
 ## 💻 Web App Usage (Recommended)
 
 The easiest way to extract data is using the interactive local web server.
