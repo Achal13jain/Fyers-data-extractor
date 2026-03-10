@@ -5,9 +5,14 @@ import sys
 from datetime import datetime
 
 from config import DEFAULT_OUTPUT_FILE
+from discovery import get_latest_gold_symbol
 from downloader import FyersDownloader
 from utils import setup_logger
-from discovery import get_latest_gold_symbol
+
+VALID_RESOLUTIONS = {
+    "1", "2", "3", "5", "10", "15",
+    "20", "30", "60", "120", "240", "1D",
+}
 
 logger = setup_logger(__name__)
 
@@ -73,6 +78,13 @@ def main() -> None:
         
     if start_date > end_date:
         logger.error("Start date cannot be after end date.")
+        sys.exit(1)
+
+    if args.resolution not in VALID_RESOLUTIONS:
+        logger.error(
+            f"Invalid resolution '{args.resolution}'. "
+            f"Allowed: {', '.join(sorted(VALID_RESOLUTIONS))}"
+        )
         sys.exit(1)
         
     try:
