@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fyers Data Extractor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-animation">
+        <div class="blob blob1"></div>
+        <div class="blob blob2"></div>
+        <div class="blob blob3"></div>
+    </div>
+
+    <div class="container glass">
+        <div class="header">
+            <h1>MCX Data Extractor</h1>
+            <p>Download robust 1-minute historical data natively from Fyers.</p>
+        </div>
+
+        <form id="downloadForm">
+            <!-- Symbol Search Input -->
+            <div class="input-field symbol-container">
+                <label for="symbolSearch">Contract Symbol</label>
+                <input type="text" id="symbolSearch" placeholder="Search MCX symbol (e.g., SILVER, CRUDEOIL)..."
+                    autocomplete="off">
+                <div class="symbol-dropdown" id="symbolDropdown" style="display: none;"></div>
+                <div style="font-size: 0.8rem; color: #64748b; margin-top: 8px; margin-left: 4px;">
+                    Or manually browse the <a href="https://public.fyers.in/sym_details/MCX_COM.csv" target="_blank"
+                        style="color: #3b82f6; text-decoration: none; font-weight: 500;">Fyers MCX Master List</a>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-field">
+                    <label for="fromDate">Start Date <span
+                            style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">(DD-MM-YYYY)</span></label>
+                    <input type="text" id="fromDate" placeholder="01-02-2026" required pattern="\d{2}-\d{2}-\d{4}">
+                </div>
+
+                <div class="input-field">
+                    <label for="toDate">End Date <span
+                            style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">(DD-MM-YYYY)</span></label>
+                    <input type="text" id="toDate" placeholder="28-02-2026" required pattern="\d{2}-\d{2}-\d{4}">
+                </div>
+            </div>
+
+            <button type="submit" id="downloadBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round" class="download-icon">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span class="btn-text">Download CSV Data</span>
+                <div class="loader" id="loader" style="display: none;"></div>
+            </button>
+            <div id="error-msg" class="error-msg"></div>
+            <div id="success-msg" class="success-msg" style="display: none;">Download started successfully!</div>
+        </form>
+    </div>
+
+    <!-- Features Section for Landing Page feel -->
+    <div class="features container glass" style="margin-top: 24px; padding: 32px 40px;">
+        <h3 style="margin-bottom: 16px; color: #1e293b; font-size: 1.2rem;">Why use this extractor?</h3>
+        <ul class="feature-list">
+            <li>
+                <div class="feature-icon">✨</div>
+                <div><strong>Auto-Discovery</strong> Always fetches the nearest active Gold contract automatically.
+                </div>
+            </li>
+            <li>
+                <div class="feature-icon">⚡</div>
+                <div><strong>Smart Chunking</strong> Bypasses Fyers API limits by automatically splitting large date
+                    ranges.</div>
+            </li>
+            <li>
+                <div class="feature-icon">📊</div>
+                <div><strong>Ready to Analyze</strong> Outputs clean, continuous 1-minute OHLCV data directly to CSV.
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <p>Automated Symbol Discovery Enabled • Fast Rate Switching</p>
+        <a href="https://github.com/Achal13jain/Fyers-data-extractor" target="_blank" class="github-link">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                </path>
+            </svg>
+            View on GitHub
+        </a>
+    </div>
+
+    <script>
+        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById('downloadBtn');
+            const btnText = document.querySelector('.btn-text');
+            const loader = document.getElementById('loader');
+            const errorMsg = document.getElementById('error-msg');
+            const successMsg = document.getElementById('success-msg');
+
+            const rawSymbolValue = document.getElementById('symbolSearch').value.trim();
+            const finalSymbol = rawSymbolValue || "auto";
+
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+
+            // UI update
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            btn.disabled = true;
+            btnText.textContent = "Downloading...";
+            document.querySelector('.download-icon').style.display = 'none';
+            loader.style.display = "inline-block";
+
+            try {
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symbol: finalSymbol,
+                        from_date: fromDate,
+                        to_date: toDate
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Download failed');
+                }
+
+                // Get the blob of the CSV
+                const blob = await response.blob();
+
+                // Try to get filename from headers
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `data_1min_${fromDate}_to_${toDate}.csv`;
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
+                    if (match && match[1]) filename = decodeURIComponent(match[1]);
+                }
+
+                // Create a download link and trigger it
+                const windowUrl = window.URL || window.webkitURL;
+                const link = document.createElement('a');
+                link.href = windowUrl.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+
+                successMsg.style.display = 'block';
+                setTimeout(() => { successMsg.style.display = 'none'; }, 5000);
+
+            } catch (error) {
+                errorMsg.textContent = error.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                // Restore UI
+                btn.disabled = false;
+                btnText.textContent = "Download CSV Data";
+                document.querySelector('.download-icon').style.display = 'block';
+                loader.style.display = "none";
+            }
+        });
+
+        // --- Symbol Search Autocomplete Logic ---
+        const symbolInput = document.getElementById('symbolSearch');
+        const dropdown = document.getElementById('symbolDropdown');
+        let debounceTimer;
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!symbolInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        symbolInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            clearTimeout(debounceTimer);
+
+            if (query.length < 3) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/symbols?query=${encodeURIComponent(query)}`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+
+                    dropdown.innerHTML = '';
+                    if (data.symbols && data.symbols.length > 0) {
+                        data.symbols.forEach(sym => {
+                            const div = document.createElement('div');
+                            div.className = 'dropdown-item';
+                            // Format: NAME (MCX:SYMBOL)
+                            div.innerHTML = `<strong>${sym.name}</strong><br><small style="color:#64748b">${sym.symbol}</small>`;
+                            div.addEventListener('click', () => {
+                                symbolInput.value = sym.symbol; // Insert Fyers Symbol
+                                dropdown.style.display = 'none';
+                            });
+                            dropdown.appendChild(div);
+                        });
+                        dropdown.style.display = 'block';
+                    } else {
+                        dropdown.innerHTML = '<div style="padding: 12px; color: #64748b; text-align: center;">No matches found</div>';
+                        dropdown.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch symbols", err);
+                }
+            }, 500); // 500ms debounce
+        });
+
+        // Auto-fill today's date in End Date
+        window.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            document.getElementById('toDate').value = `${dd}-${mm}-${yyyy}`;
+
+            // Auto fill start date to 1 week ago
+            const lastWeek = new Date(today);
+            lastWeek.setDate(lastWeek.getDate() - 7);
+            const lw_dd = String(lastWeek.getDate()).padStart(2, '0');
+            const lw_mm = String(lastWeek.getMonth() + 1).padStart(2, '0');
+            const lw_yyyy = lastWeek.getFullYear();
+            document.getElementById('fromDate').value = `${lw_dd}-${lw_mm}-${lw_yyyy}`;
+        });
+    </script>
+</body>
+
+</html>
