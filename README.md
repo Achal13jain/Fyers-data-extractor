@@ -29,7 +29,7 @@ It features both a robust **Command Line Interface (CLI)** and a gorgeous **Web 
 ### 2. Create a Fyers API App
 1. Go to the [Fyers API Dashboard](https://myapi.fyers.in/).
 2. Create a new App.
-3. Set the **Redirect URI** to `http://127.0.0.1:5000/`.
+3. Set the **Redirect URI** to `http://127.0.0.1:8000/api/auth/callback`.
 4. After creation, copy your **App ID** (Client ID) and **Secret Key**.
 
 ### 3. Installation
@@ -60,24 +60,22 @@ It features both a robust **Command Line Interface (CLI)** and a gorgeous **Web 
    ```env
    FYERS_CLIENT_ID=your_client_id_here
    FYERS_SECRET_KEY=your_secret_key_here
-   FYERS_REDIRECT_URI=http://127.0.0.1:5000/
+   FYERS_REDIRECT_URI=http://127.0.0.1:8000/api/auth/callback
    LOG_LEVEL=INFO
    ```
 
 ---
 
-## 🔐 First-Time Authentication Flow
+## 🔐 Authentication (Fully Automatic)
 
-Because Fyers requires strict user authentication to access their API, your **first** download attempt will trigger the OAuth flow:
-1. **Redirect**: A browser window will automatically open and redirect you to the Fyers Login Page.
-2. **Login**: Enter your Fyers Client ID and your **4-digit PIN** as normal.
-3. **The Auth Code**: After logging in, the browser will redirect you to `http://127.0.0.1:8080/` (it might look like a broken page, this is perfectly normal). **Look at the URL in your browser's address bar**. It will look something like this:
-   `http://127.0.0.1:8080/?s=ok&code=YOUR_LONG_AUTH_CODE_HERE&state=...`
-4. **Copy the Code**: Copy the exact value of the `code` parameter from that URL.
-5. **Paste into Terminal**: Return to the terminal/command prompt where you ran the app (e.g. where `python web.py` is running). You will see it pausing and asking you to paste the auth code.
-6. **Token Saved**: Press Enter. The app will securely generate an access token and save it to `token.json`! 
+Authentication is handled entirely through the browser — **no terminal interaction required**.
 
-*Note: You only have to do this once! Future downloads will be completely automatic until the Fyers token expires.*
+1. **Click Download** on the Web UI. If no valid token exists, you'll be redirected to the Fyers login page.
+2. **Log in** with your Fyers credentials (Client ID + 4-digit PIN).
+3. **Auto-redirect**: After login, Fyers redirects back to the app which automatically captures your auth code, generates a token, and saves it.
+4. **Done!** You'll see a green "✅ Authenticated" badge. Click Download again to get your CSV.
+
+*The token is cached in `token.json` and reused until it expires (end of day). Future downloads are instant.*
 
 ---
 

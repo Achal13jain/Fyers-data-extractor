@@ -69,6 +69,8 @@
                 </div>
             </div>
 
+            <div id="auth-badge" class="auth-badge" style="display:none; margin-bottom: 16px; padding: 10px 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 500; text-align: center;"></div>
+
             <button type="submit" id="downloadBtn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round" class="download-icon">
@@ -120,6 +122,30 @@
     </div>
 
     <script>
+        // --- Auth Status Check ---
+        async function checkAuthStatus() {
+            const badge = document.getElementById('auth-badge');
+            try {
+                const res = await fetch('/api/auth/status');
+                const data = await res.json();
+                if (data.authenticated) {
+                    badge.textContent = '✅ Authenticated — Ready to download';
+                    badge.style.background = '#ecfdf5';
+                    badge.style.color = '#059669';
+                    badge.style.border = '1px solid #a7f3d0';
+                } else {
+                    badge.textContent = '🔒 Not authenticated — Click download to log in';
+                    badge.style.background = '#fef2f2';
+                    badge.style.color = '#ef4444';
+                    badge.style.border = '1px solid #fecaca';
+                }
+                badge.style.display = 'block';
+            } catch (err) {
+                console.error('Failed to check auth status', err);
+            }
+        }
+
+        // --- Download Form Handler ---
         document.getElementById('downloadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -136,7 +162,6 @@
             const fromDate = document.getElementById('fromDate').value;
             const toDate = document.getElementById('toDate').value;
 
-            // UI update
             errorMsg.style.display = 'none';
             successMsg.style.display = 'none';
             btn.disabled = true;
@@ -156,15 +181,23 @@
                     })
                 });
 
+                if (response.status === 401) {
+                    // Auth required — redirect to Fyers login
+                    const data = await response.json();
+                    const detail = data.detail;
+                    if (detail && detail.auth_url) {
+                        window.location.href = detail.auth_url;
+                        return;
+                    }
+                    throw new Error('Authentication required but no login URL received.');
+                }
+
                 if (!response.ok) {
                     const data = await response.json();
                     throw new Error(data.detail || 'Download failed');
                 }
 
-                // Get the blob of the CSV
                 const blob = await response.blob();
-
-                // Try to get filename from headers
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let filename = `data_${resolution}m_${fromDate}_to_${toDate}.csv`;
                 if (contentDisposition) {
@@ -172,7 +205,6 @@
                     if (match && match[1]) filename = decodeURIComponent(match[1]);
                 }
 
-                // Create a download link and trigger it
                 const windowUrl = window.URL || window.webkitURL;
                 const link = document.createElement('a');
                 link.href = windowUrl.createObjectURL(blob);
@@ -188,7 +220,6 @@
                 errorMsg.textContent = error.message;
                 errorMsg.style.display = 'block';
             } finally {
-                // Restore UI
                 btn.disabled = false;
                 btnText.textContent = "Download CSV Data";
                 document.querySelector('.download-icon').style.display = 'block';
@@ -196,12 +227,11 @@
             }
         });
 
-        // --- Symbol Search Autocomplete Logic ---
+        // --- Symbol Search Autocomplete ---
         const symbolInput = document.getElementById('symbolSearch');
         const dropdown = document.getElementById('symbolDropdown');
         let debounceTimer;
 
-        // Hide dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!symbolInput.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.style.display = 'none';
@@ -228,10 +258,9 @@
                         data.symbols.forEach(sym => {
                             const div = document.createElement('div');
                             div.className = 'dropdown-item';
-                            // Format: NAME (MCX:SYMBOL)
                             div.innerHTML = `<strong>${sym.name}</strong><br><small style="color:#64748b">${sym.symbol}</small>`;
                             div.addEventListener('click', () => {
-                                symbolInput.value = sym.symbol; // Insert Fyers Symbol
+                                symbolInput.value = sym.symbol;
                                 dropdown.style.display = 'none';
                             });
                             dropdown.appendChild(div);
@@ -244,10 +273,10 @@
                 } catch (err) {
                     console.error("Failed to fetch symbols", err);
                 }
-            }, 500); // 500ms debounce
+            }, 500);
         });
 
-        // Auto-fill today's date in End Date
+        // --- Page Initialization ---
         window.addEventListener('DOMContentLoaded', () => {
             const today = new Date();
             const dd = String(today.getDate()).padStart(2, '0');
@@ -255,13 +284,28 @@
             const yyyy = today.getFullYear();
             document.getElementById('toDate').value = `${dd}-${mm}-${yyyy}`;
 
-            // Auto fill start date to 1 week ago
             const lastWeek = new Date(today);
             lastWeek.setDate(lastWeek.getDate() - 7);
             const lw_dd = String(lastWeek.getDate()).padStart(2, '0');
             const lw_mm = String(lastWeek.getMonth() + 1).padStart(2, '0');
             const lw_yyyy = lastWeek.getFullYear();
             document.getElementById('fromDate').value = `${lw_dd}-${lw_mm}-${lw_yyyy}`;
+
+            // Check auth status on load
+            checkAuthStatus();
+
+            // Show success toast if returning from OAuth callback
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('auth') === 'success') {
+                const successMsg = document.getElementById('success-msg');
+                successMsg.textContent = '✅ Authenticated! You can now download data.';
+                successMsg.style.display = 'block';
+                setTimeout(() => { successMsg.style.display = 'none'; }, 5000);
+                // Clean URL without reloading
+                window.history.replaceState({}, '', '/frontend/');
+                // Refresh auth badge
+                checkAuthStatus();
+            }
         });
     </script>
 </body>

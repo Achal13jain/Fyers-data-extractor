@@ -14,17 +14,34 @@ from auth import authenticate
 
 logger = setup_logger(__name__)
 
+
 class FyersDownloader:
-    """Handles downloading historical data from Fyers."""
-    
-    def __init__(self) -> None:
-        """Initializes the Fyers Downloader and authenticates."""
-        self.access_token = authenticate()
+    """Handles downloading historical data from Fyers.
+
+    Can be initialized with an explicit access token (for web
+    use) or without one (triggers CLI auth flow automatically).
+    """
+
+    def __init__(
+        self, access_token: Optional[str] = None,
+    ) -> None:
+        """Initializes the Fyers Downloader.
+
+        Args:
+            access_token (Optional[str]): A pre-obtained Fyers
+                access token. If None, triggers the CLI
+                authenticate() flow (terminal input).
+        """
+        if access_token:
+            self.access_token = access_token
+        else:
+            self.access_token = authenticate()
+
         self.fyers = fyersModel.FyersModel(
             client_id=FYERS_CLIENT_ID,
             is_async=False,
             token=self.access_token,
-            log_path=""
+            log_path="",
         )
 
     def _fetch_chunk_with_retry(
