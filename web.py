@@ -106,8 +106,10 @@ def auth_callback(
         auth_code: Alternative param name for the auth code.
         state: OAuth state parameter (unused).
     """
-    # Fyers may send the code as 'code' or 'auth_code'
-    final_code = code or auth_code
+    # Fyers may send the code as 'auth_code' or 'code'.
+    # We prioritize 'auth_code' because 'code' sometimes contains
+    # status codes (like '200') instead of the actual token.
+    final_code = auth_code or code
 
     if not final_code:
         return HTMLResponse(
