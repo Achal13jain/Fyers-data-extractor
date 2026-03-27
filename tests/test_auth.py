@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from auth import is_token_valid, load_saved_token, save_token
+from fyers_extractor.auth import is_token_valid, load_saved_token, save_token
 
 
 class TestIsTokenValid:
@@ -59,7 +59,7 @@ class TestSaveAndLoadToken:
         """Saving then loading a token should return
         the same access_token."""
         token_file = tmp_path / "token.json"
-        with patch("auth.TOKEN_FILE_PATH", str(token_file)):
+        with patch("fyers_extractor.auth.TOKEN_FILE_PATH", str(token_file)):
             save_token("my_secret_token")
             loaded = load_saved_token()
         assert loaded == "my_secret_token"
@@ -69,7 +69,7 @@ class TestSaveAndLoadToken:
     ) -> None:
         """load_saved_token should return None if no file exists."""
         token_file = tmp_path / "nonexistent.json"
-        with patch("auth.TOKEN_FILE_PATH", str(token_file)):
+        with patch("fyers_extractor.auth.TOKEN_FILE_PATH", str(token_file)):
             assert load_saved_token() is None
 
     def test_load_returns_none_for_expired_token(
@@ -83,7 +83,7 @@ class TestSaveAndLoadToken:
             "timestamp": yesterday.isoformat(),
         }
         token_file.write_text(json.dumps(data))
-        with patch("auth.TOKEN_FILE_PATH", str(token_file)):
+        with patch("fyers_extractor.auth.TOKEN_FILE_PATH", str(token_file)):
             assert load_saved_token() is None
 
     def test_load_returns_none_for_corrupt_json(
@@ -92,5 +92,5 @@ class TestSaveAndLoadToken:
         """Corrupt JSON in token file should return None."""
         token_file = tmp_path / "token.json"
         token_file.write_text("{corrupt json!!!")
-        with patch("auth.TOKEN_FILE_PATH", str(token_file)):
+        with patch("fyers_extractor.auth.TOKEN_FILE_PATH", str(token_file)):
             assert load_saved_token() is None

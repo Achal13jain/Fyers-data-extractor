@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from utils import chunk_date_range, setup_logger
+from fyers_extractor.utils import chunk_date_range, setup_logger
 
 
 class TestSetupLogger:

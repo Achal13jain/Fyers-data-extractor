@@ -17,15 +17,15 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from auth import (
+from fyers_extractor.auth import (
     exchange_auth_code,
     generate_auth_url,
     load_saved_token,
 )
-from config import FYERS_CLIENT_ID
-from discovery import fetch_mcx_master, get_latest_gold_symbol
-from downloader import FyersDownloader
-from utils import setup_logger
+from fyers_extractor.config import FYERS_CLIENT_ID
+from fyers_extractor.discovery import fetch_mcx_master, get_latest_gold_symbol
+from fyers_extractor.downloader import FyersDownloader
+from fyers_extractor.utils import setup_logger
 
 logger = setup_logger(__name__)
 

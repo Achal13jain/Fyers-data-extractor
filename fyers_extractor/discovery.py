@@ -11,7 +11,7 @@ import urllib.error
 import urllib.request
 from typing import Dict, List
 
-from utils import setup_logger
+from .utils import setup_logger
 
 logger = setup_logger(__name__)
 

@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime, timedelta
 from typing import List, Tuple
-from config import LOG_LEVEL
+from .config import LOG_LEVEL
 
 def setup_logger(name: str) -> logging.Logger:
     """Sets up and returns a configured logger.
