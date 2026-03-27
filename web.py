@@ -77,7 +77,7 @@ def _cleanup_temp_file(path: str) -> None:
 # --- Auth Endpoints ---
 
 @app.get("/api/auth/status")
-def auth_status():
+def auth_status() -> dict:
     """Returns whether a valid Fyers token exists.
 
     The frontend polls this on page load to show the
@@ -93,7 +93,7 @@ def auth_callback(
     code: str = "",
     auth_code: str = "",
     state: str = "",
-):
+) -> HTMLResponse:
     """OAuth callback endpoint that Fyers redirects to.
 
     After a successful Fyers login, the browser is redirected
@@ -221,13 +221,13 @@ family=Outfit:wght@400;600&display=swap" rel="stylesheet">
 # --- Core Endpoints ---
 
 @app.get("/")
-def redirect_to_frontend():
+def redirect_to_frontend() -> RedirectResponse:
     """Redirect root to frontend."""
     return RedirectResponse(url="/frontend/")
 
 
 @app.get("/api/symbols")
-def get_symbols(query: str = ""):
+def get_symbols(query: str = "") -> dict:
     """Returns top 50 symbols matching the query from Fyers master.
 
     Uses the cached master CSV fetcher to avoid redundant
@@ -266,7 +266,7 @@ def get_symbols(query: str = ""):
 def download_data(
     req: DownloadRequest,
     background_tasks: BackgroundTasks,
-):
+) -> FileResponse:
     """API endpoint to download data given a date range.
 
     If the Fyers token is expired, returns a 401 response

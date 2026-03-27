@@ -1,173 +1,698 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fyers Data Extractor</title>
+    <title>Fyers MCX Data Extractor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Apply saved theme before first paint to prevent flash -->
+    <script>
+        (function(){
+            var t = localStorage.getItem('theme');
+            if (t === 'dark') document.documentElement.setAttribute('data-theme','dark');
+        })();
+    </script>
 </head>
 
 <body>
-    <div class="background-animation">
-        <div class="blob blob1"></div>
-        <div class="blob blob2"></div>
-        <div class="blob blob3"></div>
-    </div>
+    <!-- Ambient background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow--1"></div>
+    <div class="bg-glow bg-glow--2"></div>
 
-    <div class="container glass">
-        <div class="header">
-            <h1>MCX Data Extractor</h1>
-            <p>Download robust 1-minute historical data natively from Fyers.</p>
-        </div>
-
-        <form id="downloadForm">
-            <!-- Symbol Search Input -->
-            <div class="input-field symbol-container">
-                <label for="symbolSearch">Contract Symbol</label>
-                <input type="text" id="symbolSearch" placeholder="Search MCX symbol (e.g., SILVER, CRUDEOIL)..."
-                    autocomplete="off">
-                <div class="symbol-dropdown" id="symbolDropdown" style="display: none;"></div>
-                <div style="font-size: 0.8rem; color: #64748b; margin-top: 8px; margin-left: 4px;">
-                    Or manually browse the <a href="https://public.fyers.in/sym_details/MCX_COM.csv" target="_blank"
-                        style="color: #3b82f6; text-decoration: none; font-weight: 500;">Fyers MCX Master List</a>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <div class="input-field">
-                    <label for="resolution">Resolution</label>
-                    <select id="resolution">
-                        <option value="1" selected>1 Minute</option>
-                        <option value="2">2 Minutes</option>
-                        <option value="3">3 Minutes</option>
-                        <option value="5">5 Minutes</option>
-                        <option value="10">10 Minutes</option>
-                        <option value="15">15 Minutes</option>
-                        <option value="20">20 Minutes</option>
-                        <option value="30">30 Minutes</option>
-                        <option value="60">60 Minutes</option>
-                        <option value="120">2 Hours</option>
-                        <option value="240">4 Hours</option>
-                        <option value="1D">Daily</option>
-                    </select>
-                </div>
-
-                <div class="input-field">
-                    <label for="fromDate">Start Date <span
-                            style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">(DD-MM-YYYY)</span></label>
-                    <input type="text" id="fromDate" placeholder="01-02-2026" required pattern="\d{2}-\d{2}-\d{4}">
-                </div>
-
-                <div class="input-field">
-                    <label for="toDate">End Date <span
-                            style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">(DD-MM-YYYY)</span></label>
-                    <input type="text" id="toDate" placeholder="28-02-2026" required pattern="\d{2}-\d{2}-\d{4}">
-                </div>
-            </div>
-
-            <div id="auth-badge" class="auth-badge" style="display:none; margin-bottom: 16px; padding: 10px 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 500; text-align: center;"></div>
-
-            <button type="submit" id="downloadBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round" class="download-icon">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
+    <!-- Top navigation -->
+    <nav class="topbar" id="topbar">
+        <div class="topbar__left">
+            <div class="topbar__logo">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                 </svg>
-                <span class="btn-text">Download CSV Data</span>
-                <div class="loader" id="loader" style="display: none;"></div>
+                <span>MCX<em>EXTRACT</em></span>
+            </div>
+        </div>
+        <div class="topbar__right">
+            <div class="topbar__status" id="topbarStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking…</span>
+            </div>
+            <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+                <svg class="theme-toggle__sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg class="theme-toggle__moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
             </button>
-            <div id="error-msg" class="error-msg"></div>
-            <div id="success-msg" class="success-msg" style="display: none;">Download started successfully!</div>
-        </form>
+            <a href="https://github.com/Achal13jain/Fyers-data-extractor" target="_blank" rel="noopener" class="topbar__github" aria-label="View on GitHub">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main">
+        <section class="hero" id="hero">
+            <p class="hero__tag">&mdash; Fyers API v3 &bull; MCX Futures</p>
+            <h1 class="hero__title">Historical Data<br><span class="hero__accent">Extractor</span></h1>
+            <p class="hero__sub">Download OHLCV candle data for any MCX futures contract.<br>Auto-discovery &bull; Smart chunking &bull; Rate-limit handling.</p>
+        </section>
+
+        <section class="card" id="card">
+            <div class="card__header">
+                <div class="card__dots">
+                    <span class="card__dot card__dot--red"></span>
+                    <span class="card__dot card__dot--yellow"></span>
+                    <span class="card__dot card__dot--green"></span>
+                </div>
+                <span class="card__header-title">download_terminal</span>
+            </div>
+
+            <form id="downloadForm" class="card__body" autocomplete="off" novalidate>
+                <!-- Symbol search -->
+                <div class="field field--symbol">
+                    <label for="symbolSearch" class="field__label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        Contract Symbol
+                    </label>
+                    <div class="field__input-wrap">
+                        <input type="text" id="symbolSearch" class="field__input" placeholder="Search: SILVER, CRUDEOIL, GOLD …" autocomplete="off">
+                        <kbd class="field__kbd">MCX</kbd>
+                    </div>
+                    <div class="dropdown" id="symbolDropdown"></div>
+                    <p class="field__hint">Leave empty for auto Gold contract &middot; <a href="https://public.fyers.in/sym_details/MCX_COM.csv" target="_blank" rel="noopener">Browse master list &nearr;</a></p>
+                </div>
+
+                <!-- Resolution + Date range -->
+                <div class="field-row">
+                    <div class="field">
+                        <label for="resolution" class="field__label">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            Resolution
+                        </label>
+                        <div class="field__select-wrap">
+                            <select id="resolution" class="field__input field__input--select">
+                                <option value="1" selected>1 min</option>
+                                <option value="2">2 min</option>
+                                <option value="3">3 min</option>
+                                <option value="5">5 min</option>
+                                <option value="10">10 min</option>
+                                <option value="15">15 min</option>
+                                <option value="20">20 min</option>
+                                <option value="30">30 min</option>
+                                <option value="60">1 hr</option>
+                                <option value="120">2 hr</option>
+                                <option value="240">4 hr</option>
+                                <option value="1D">1 Day</option>
+                            </select>
+                            <svg class="field__select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+
+                    <div class="field field--date">
+                        <label for="fromDate" class="field__label">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            Start Date
+                        </label>
+                        <div class="field__date-wrap">
+                            <input type="text" id="fromDate" class="field__input field__input--date" placeholder="DD-MM-YYYY" maxlength="10" inputmode="numeric">
+                            <button type="button" class="cal-trigger" data-target="fromDate" aria-label="Pick start date">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            </button>
+                        </div>
+                        <span class="field__error" id="fromDateError"></span>
+                    </div>
+
+                    <div class="field field--date">
+                        <label for="toDate" class="field__label">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            End Date
+                        </label>
+                        <div class="field__date-wrap">
+                            <input type="text" id="toDate" class="field__input field__input--date" placeholder="DD-MM-YYYY" maxlength="10" inputmode="numeric">
+                            <button type="button" class="cal-trigger" data-target="toDate" aria-label="Pick end date">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            </button>
+                        </div>
+                        <span class="field__error" id="toDateError"></span>
+                    </div>
+                </div>
+
+                <!-- Quick range pills -->
+                <div class="quick-range">
+                    <span class="quick-range__label">Quick:</span>
+                    <button type="button" class="pill" data-days="7">7D</button>
+                    <button type="button" class="pill" data-days="30">1M</button>
+                    <button type="button" class="pill" data-days="90">3M</button>
+                    <button type="button" class="pill" data-days="180">6M</button>
+                    <button type="button" class="pill" data-days="365">1Y</button>
+                </div>
+
+                <!-- Auth badge -->
+                <div id="auth-badge" class="auth-badge"></div>
+
+                <!-- Download -->
+                <button type="submit" id="downloadBtn" class="btn-download">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-download__icon" id="dlIcon">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span class="btn-download__text" id="btnText">Download CSV</span>
+                    <div class="btn-download__loader" id="loader"></div>
+                </button>
+
+                <div id="error-msg" class="msg msg--error"></div>
+                <div id="success-msg" class="msg msg--success"></div>
+            </form>
+        </section>
+
+        <!-- Features -->
+        <section class="features" id="features">
+            <div class="feature">
+                <div class="feature__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+                <h3 class="feature__title">Auto-Discovery</h3>
+                <p class="feature__desc">Parses the live Fyers MCX master CSV to find the nearest active contract automatically.</p>
+            </div>
+            <div class="feature">
+                <div class="feature__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+                <h3 class="feature__title">Smart Chunking</h3>
+                <p class="feature__desc">Bypasses Fyers 100-day limit by splitting large ranges into precise sub-requests.</p>
+            </div>
+            <div class="feature">
+                <div class="feature__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+                <h3 class="feature__title">Robust Retries</h3>
+                <p class="feature__desc">Exponential backoff handles rate-limits and transient failures gracefully.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Calendar popup (single shared instance) -->
+    <div class="cal" id="calPopup">
+        <div class="cal__nav">
+            <button type="button" class="cal__nav-btn" id="calPrev" aria-label="Previous month">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <span class="cal__title" id="calTitle"></span>
+            <button type="button" class="cal__nav-btn" id="calNext" aria-label="Next month">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+        </div>
+        <div class="cal__weekdays"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+        <div class="cal__grid" id="calGrid"></div>
+        <div class="cal__footer">
+            <button type="button" class="cal__today-btn" id="calToday">Today</button>
+        </div>
     </div>
 
-    <!-- Features Section for Landing Page feel -->
-    <div class="features container glass" style="margin-top: 24px; padding: 32px 40px;">
-        <h3 style="margin-bottom: 16px; color: #1e293b; font-size: 1.2rem;">Why use this extractor?</h3>
-        <ul class="feature-list">
-            <li>
-                <div class="feature-icon">✨</div>
-                <div><strong>Auto-Discovery</strong> Always fetches the nearest active Gold contract automatically.
-                </div>
-            </li>
-            <li>
-                <div class="feature-icon">⚡</div>
-                <div><strong>Smart Chunking</strong> Bypasses Fyers API limits by automatically splitting large date
-                    ranges.</div>
-            </li>
-            <li>
-                <div class="feature-icon">📊</div>
-                <div><strong>Ready to Analyze</strong> Outputs clean, continuous 1-minute OHLCV data directly to CSV.
-                </div>
-            </li>
-        </ul>
-    </div>
-
-    <div class="footer">
-        <p>Automated Symbol Discovery Enabled • Fast Rate Switching</p>
-        <a href="https://github.com/Achal13jain/Fyers-data-extractor" target="_blank" class="github-link">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path
-                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
-                </path>
-            </svg>
-            View on GitHub
-        </a>
-    </div>
+    <footer class="footer">
+        <p>Built by <a href="https://github.com/Achal13jain" target="_blank" rel="noopener">Achal Jain</a> &middot; MIT License</p>
+    </footer>
 
     <script>
-        // --- Auth Status Check ---
+    (function() {
+        'use strict';
+
+        /* ═══════════════════════════════════════════════════════
+           Utilities
+           ═══════════════════════════════════════════════════════ */
+        const $ = (s) => document.querySelector(s);
+        const $$ = (s) => document.querySelectorAll(s);
+
+        function formatDate(d) {
+            return String(d.getDate()).padStart(2,'0') + '-' +
+                   String(d.getMonth()+1).padStart(2,'0') + '-' +
+                   d.getFullYear();
+        }
+
+        /** Parse DD-MM-YYYY → Date or null. Validates that the date actually exists. */
+        function parseDDMMYYYY(str) {
+            if (!str || !/^\d{2}-\d{2}-\d{4}$/.test(str)) return null;
+            const parts = str.split('-');
+            const day = +parts[0], month = +parts[1] - 1, year = +parts[2];
+            const d = new Date(year, month, day);
+            // Verify the date didn't roll over (e.g., Feb 31 → Mar 3)
+            if (d.getFullYear() !== year || d.getMonth() !== month || d.getDate() !== day) return null;
+            return d;
+        }
+
+        /** Strip to midnight for clean comparison */
+        function stripTime(d) {
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+
+        /** Escape HTML to prevent XSS from API responses */
+        function esc(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        const TODAY = stripTime(new Date());
+
+        /* ═══════════════════════════════════════════════════════
+           Theme Toggle
+           ═══════════════════════════════════════════════════════ */
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           Date Input Auto-Formatting
+           Automatically inserts dashes as user types digits.
+           ═══════════════════════════════════════════════════════ */
+        function setupDateAutoFormat(input) {
+            input.addEventListener('input', function(e) {
+                // Strip non-digits
+                let raw = this.value.replace(/\D/g, '');
+                // Insert dashes: DD-MM-YYYY
+                if (raw.length > 4) raw = raw.slice(0,2) + '-' + raw.slice(2,4) + '-' + raw.slice(4,8);
+                else if (raw.length > 2) raw = raw.slice(0,2) + '-' + raw.slice(2);
+                this.value = raw;
+
+                // Clear quick-range pills on manual edit
+                $$('.pill').forEach(p => p.classList.remove('pill--active'));
+
+                // Live validate
+                validateDateField(this.id);
+            });
+
+            input.addEventListener('blur', function() {
+                validateDateField(this.id);
+                crossValidateDates();
+            });
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           Field Validation
+           ═══════════════════════════════════════════════════════ */
+        function setFieldError(inputId, msg) {
+            const input = $(`#${inputId}`);
+            const errEl = $(`#${inputId}Error`);
+            if (msg) {
+                input.classList.add('field__input--invalid');
+                if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+            } else {
+                input.classList.remove('field__input--invalid');
+                if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+            }
+        }
+
+        function validateDateField(inputId) {
+            const input = $(`#${inputId}`);
+            const val = input.value.trim();
+
+            // Don't validate empty or incomplete
+            if (val.length < 10) {
+                setFieldError(inputId, '');
+                return null;
+            }
+
+            const d = parseDDMMYYYY(val);
+            if (!d) {
+                setFieldError(inputId, 'Invalid date');
+                return null;
+            }
+
+            setFieldError(inputId, '');
+            return d;
+        }
+
+        function crossValidateDates() {
+            const fromVal = $('#fromDate').value.trim();
+            const toVal   = $('#toDate').value.trim();
+            if (fromVal.length < 10 || toVal.length < 10) return true;
+
+            const fromD = parseDDMMYYYY(fromVal);
+            const toD   = parseDDMMYYYY(toVal);
+            if (!fromD || !toD) return false;
+
+            if (fromD > toD) {
+                setFieldError('fromDate', 'Start must be before end');
+                setFieldError('toDate', 'End must be after start');
+                return false;
+            }
+
+            // Clear cross-validation errors
+            if ($('#fromDate').classList.contains('field__input--invalid')) {
+                const fromSelfValid = parseDDMMYYYY(fromVal);
+                if (fromSelfValid) setFieldError('fromDate', '');
+            }
+            if ($('#toDate').classList.contains('field__input--invalid')) {
+                const toSelfValid = parseDDMMYYYY(toVal);
+                if (toSelfValid) setFieldError('toDate', '');
+            }
+
+            return true;
+        }
+
+        /** Full validation before submit. Returns true if valid. */
+        function validateAll() {
+            let valid = true;
+
+            const fromD = validateDateField('fromDate');
+            const toD   = validateDateField('toDate');
+
+            if (!$('#fromDate').value.trim()) {
+                setFieldError('fromDate', 'Required');
+                valid = false;
+            } else if (!fromD) {
+                valid = false;
+            }
+
+            if (!$('#toDate').value.trim()) {
+                setFieldError('toDate', 'Required');
+                valid = false;
+            } else if (!toD) {
+                valid = false;
+            }
+
+            if (fromD && toD && fromD > toD) {
+                setFieldError('fromDate', 'Start must be before end');
+                setFieldError('toDate', 'End must be after start');
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           Calendar Picker
+           ═══════════════════════════════════════════════════════ */
+        const calPopup = $('#calPopup');
+        const calGrid  = $('#calGrid');
+        const calTitle = $('#calTitle');
+        const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        let calTarget   = null;  // 'fromDate' or 'toDate'
+        let calViewDate = new Date();
+        let calSelected = null;
+
+        function openCalendar(inputId) {
+            calTarget = inputId;
+            const input = $(`#${inputId}`);
+            const parsed = parseDDMMYYYY(input.value);
+            if (parsed) {
+                calViewDate = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+                calSelected = stripTime(parsed);
+            } else {
+                calViewDate = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+                calSelected = null;
+            }
+            renderCalendar();
+            positionCalendar(input);
+            calPopup.classList.add('cal--open');
+        }
+
+        function closeCalendar() {
+            calPopup.classList.remove('cal--open');
+            calTarget = null;
+        }
+
+        function positionCalendar(inputEl) {
+            const wrap = inputEl.closest('.field__date-wrap');
+            const rect = wrap.getBoundingClientRect();
+            const scrollY = window.scrollY;
+            const scrollX = window.scrollX;
+            const calW = 296;
+            const calH = 360;
+
+            let top  = rect.bottom + scrollY + 6;
+            let left = rect.left + scrollX;
+
+            // Horizontal bounds
+            if (left + calW > window.innerWidth - 12) left = window.innerWidth - calW - 12;
+            if (left < 12) left = 12;
+
+            // Flip above if no room below
+            if (rect.bottom + calH > window.innerHeight) {
+                top = rect.top + scrollY - calH - 6;
+                if (top < scrollY + 8) top = scrollY + 8; // don't go above viewport
+            }
+
+            calPopup.style.top  = top + 'px';
+            calPopup.style.left = left + 'px';
+        }
+
+        function renderCalendar() {
+            const year  = calViewDate.getFullYear();
+            const month = calViewDate.getMonth();
+            calTitle.textContent = MONTHS[month] + ' ' + year;
+
+            const firstDay  = new Date(year, month, 1);
+            const lastDay   = new Date(year, month + 1, 0);
+            const startPad  = (firstDay.getDay() + 6) % 7; // Mon = 0
+            const totalDays = lastDay.getDate();
+
+            const todayKey = TODAY.getFullYear() + '-' + TODAY.getMonth() + '-' + TODAY.getDate();
+            const selKey   = calSelected ? (calSelected.getFullYear() + '-' + calSelected.getMonth() + '-' + calSelected.getDate()) : '';
+
+            let html = '';
+
+            // Prev month tail
+            const prevLast = new Date(year, month, 0).getDate();
+            for (let i = startPad - 1; i >= 0; i--) {
+                const day = prevLast - i;
+                const pm = month === 0 ? 11 : month - 1;
+                const py = month === 0 ? year - 1 : year;
+                html += dayButton(py, pm, day, true);
+            }
+
+            // Current month
+            for (let d = 1; d <= totalDays; d++) {
+                html += dayButton(year, month, d, false);
+            }
+
+            // Next month head (fill to 35 or 42)
+            const total = startPad + totalDays;
+            const rows  = total <= 35 ? 35 : 42;
+            for (let d = 1; d <= rows - total; d++) {
+                const nm = month === 11 ? 0 : month + 1;
+                const ny = month === 11 ? year + 1 : year;
+                html += dayButton(ny, nm, d, true);
+            }
+
+            calGrid.innerHTML = html;
+        }
+
+        function dayButton(y, m, d, isOther) {
+            const key = y + '-' + m + '-' + d;
+            const todayKey = TODAY.getFullYear() + '-' + TODAY.getMonth() + '-' + TODAY.getDate();
+            const selKey = calSelected ? (calSelected.getFullYear() + '-' + calSelected.getMonth() + '-' + calSelected.getDate()) : '';
+            const thisDate = new Date(y, m, d);
+
+            // Determine if this date should be disabled
+            const disabled = isDateDisabled(thisDate);
+
+            let cls = 'cal__day';
+            if (isOther)            cls += ' cal__day--other';
+            if (key === todayKey)   cls += ' cal__day--today';
+            if (key === selKey)     cls += ' cal__day--selected';
+            if (disabled)           cls += ' cal__day--disabled';
+
+            return '<button type="button" class="' + cls + '" data-year="' + y + '" data-month="' + m + '" data-day="' + d + '"' +
+                   (disabled ? ' disabled' : '') + '>' + d + '</button>';
+        }
+
+        /** Check if date should be disabled in calendar based on context */
+        function isDateDisabled(dateObj) {
+            const d = stripTime(dateObj);
+
+            if (calTarget === 'toDate') {
+                // End date can't be before start date
+                const fromD = parseDDMMYYYY($('#fromDate').value);
+                if (fromD && d < stripTime(fromD)) return true;
+            }
+
+            if (calTarget === 'fromDate') {
+                // Start date can't be after end date
+                const toD = parseDDMMYYYY($('#toDate').value);
+                if (toD && d > stripTime(toD)) return true;
+            }
+
+            return false;
+        }
+
+        // Calendar navigation
+        $('#calPrev').addEventListener('click', () => {
+            calViewDate.setMonth(calViewDate.getMonth() - 1);
+            renderCalendar();
+        });
+        $('#calNext').addEventListener('click', () => {
+            calViewDate.setMonth(calViewDate.getMonth() + 1);
+            renderCalendar();
+        });
+        $('#calToday').addEventListener('click', () => {
+            calViewDate = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+            if (!isDateDisabled(TODAY)) {
+                calSelected = new Date(TODAY);
+                selectCalDate(TODAY);
+            } else {
+                renderCalendar();
+            }
+        });
+
+        // Day click — use event delegation
+        calGrid.addEventListener('click', (e) => {
+            const btn = e.target.closest('.cal__day');
+            if (!btn || btn.disabled) return;
+            const picked = new Date(+btn.dataset.year, +btn.dataset.month, +btn.dataset.day);
+            calSelected = stripTime(picked);
+
+            // If clicking an "other month" day, also navigate view to that month
+            const clickedMonth = +btn.dataset.month;
+            const clickedYear  = +btn.dataset.year;
+            if (clickedMonth !== calViewDate.getMonth() || clickedYear !== calViewDate.getFullYear()) {
+                calViewDate = new Date(clickedYear, clickedMonth, 1);
+            }
+
+            selectCalDate(picked);
+        });
+
+        function selectCalDate(dateObj) {
+            if (!calTarget) return;
+            $(`#${calTarget}`).value = formatDate(dateObj);
+            // Clear field error
+            setFieldError(calTarget, '');
+            // Clear quick-range pills
+            $$('.pill').forEach(p => p.classList.remove('pill--active'));
+            // Cross-validate
+            crossValidateDates();
+            closeCalendar();
+        }
+
+        // Calendar trigger buttons
+        $$('.cal-trigger').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetId = btn.dataset.target;
+                if (calPopup.classList.contains('cal--open') && calTarget === targetId) {
+                    closeCalendar();
+                } else {
+                    closeCalendar(); // close any open first
+                    openCalendar(targetId);
+                }
+            });
+        });
+
+        // Close calendar on outside click
+        document.addEventListener('click', (e) => {
+            if (!calPopup.contains(e.target) && !e.target.closest('.cal-trigger')) {
+                closeCalendar();
+            }
+        });
+
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeCalendar();
+        });
+
+        // Close & reposition on scroll
+        let scrollRafId = null;
+        window.addEventListener('scroll', () => {
+            if (calPopup.classList.contains('cal--open') && calTarget) {
+                if (scrollRafId) cancelAnimationFrame(scrollRafId);
+                scrollRafId = requestAnimationFrame(() => {
+                    positionCalendar($(`#${calTarget}`));
+                });
+            }
+        }, { passive: true });
+
+        // Reposition on resize
+        window.addEventListener('resize', () => {
+            if (calPopup.classList.contains('cal--open') && calTarget) {
+                positionCalendar($(`#${calTarget}`));
+            }
+        });
+
+        /* ═══════════════════════════════════════════════════════
+           Auth Status
+           ═══════════════════════════════════════════════════════ */
         async function checkAuthStatus() {
-            const badge = document.getElementById('auth-badge');
+            const badge = $('#auth-badge');
+            const topStatus = $('#topbarStatus');
             try {
                 const res = await fetch('/api/auth/status');
                 const data = await res.json();
                 if (data.authenticated) {
-                    badge.textContent = '✅ Authenticated — Ready to download';
-                    badge.style.background = '#ecfdf5';
-                    badge.style.color = '#059669';
-                    badge.style.border = '1px solid #a7f3d0';
+                    badge.innerHTML =
+                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
+                        '<span>Authenticated — Ready to extract</span>';
+                    badge.className = 'auth-badge auth-badge--ok auth-badge--visible';
+                    topStatus.className = 'topbar__status topbar__status--ok';
+                    topStatus.querySelector('.status-text').textContent = 'Authenticated';
                 } else {
-                    badge.textContent = '🔒 Not authenticated — Click blue button below to log in';
-                    badge.style.background = '#fef2f2';
-                    badge.style.color = '#ef4444';
-                    badge.style.border = '1px solid #fecaca';
+                    badge.innerHTML =
+                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' +
+                        '<span>Not authenticated — Click download to login via Fyers</span>';
+                    badge.className = 'auth-badge auth-badge--warn auth-badge--visible';
+                    topStatus.className = 'topbar__status topbar__status--warn';
+                    topStatus.querySelector('.status-text').textContent = 'Not authenticated';
                 }
-                badge.style.display = 'block';
             } catch (err) {
-                console.error('Failed to check auth status', err);
+                console.error('Auth check failed', err);
+                topStatus.querySelector('.status-text').textContent = 'Offline';
+                badge.className = 'auth-badge'; // hidden
             }
         }
 
-        // --- Download Form Handler ---
-        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+        /* ═══════════════════════════════════════════════════════
+           Message helpers
+           ═══════════════════════════════════════════════════════ */
+        let errorTimer = null;
+        let successTimer = null;
+
+        function showError(msg) {
+            const el = $('#error-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            clearTimeout(errorTimer);
+            errorTimer = setTimeout(() => { el.style.display = 'none'; }, 10000);
+        }
+        function hideError() {
+            $('#error-msg').style.display = 'none';
+            clearTimeout(errorTimer);
+        }
+        function showSuccess(msg) {
+            const el = $('#success-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            clearTimeout(successTimer);
+            successTimer = setTimeout(() => { el.style.display = 'none'; }, 6000);
+        }
+        function hideSuccess() {
+            $('#success-msg').style.display = 'none';
+            clearTimeout(successTimer);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           Download Handler
+           ═══════════════════════════════════════════════════════ */
+        $('#downloadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideError();
+            hideSuccess();
 
-            const btn = document.getElementById('downloadBtn');
-            const btnText = document.querySelector('.btn-text');
-            const loader = document.getElementById('loader');
-            const errorMsg = document.getElementById('error-msg');
-            const successMsg = document.getElementById('success-msg');
+            // Validate all fields
+            if (!validateAll()) return;
 
-            const rawSymbolValue = document.getElementById('symbolSearch').value.trim();
-            const finalSymbol = rawSymbolValue || "auto";
+            const btn     = $('#downloadBtn');
+            const btnText = $('#btnText');
+            const loader  = $('#loader');
+            const dlIcon  = $('#dlIcon');
 
-            const resolution = document.getElementById('resolution').value;
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
+            const rawSymbol  = $('#symbolSearch').value.trim();
+            const finalSymbol = rawSymbol || 'auto';
+            const resolution = $('#resolution').value;
+            const fromDate   = $('#fromDate').value.trim();
+            const toDate     = $('#toDate').value.trim();
 
-            errorMsg.style.display = 'none';
-            successMsg.style.display = 'none';
+            // Enter loading state
             btn.disabled = true;
-            btnText.textContent = "Downloading...";
-            document.querySelector('.download-icon').style.display = 'none';
-            loader.style.display = "inline-block";
+            btn.classList.add('btn-download--loading');
+            btnText.textContent = 'Extracting…';
+            dlIcon.style.display = 'none';
+            loader.style.display = 'inline-block';
 
             try {
                 const response = await fetch('/api/download', {
@@ -182,11 +707,15 @@
                 });
 
                 if (response.status === 401) {
-                    // Auth required — redirect to Fyers login
                     const data = await response.json();
-                    const detail = data.detail;
-                    if (detail && detail.auth_url) {
-                        window.location.href = detail.auth_url;
+                    if (data.detail && data.detail.auth_url) {
+                        // Save form state before redirect
+                        try {
+                            sessionStorage.setItem('mcx_form', JSON.stringify({
+                                symbol: rawSymbol, resolution, fromDate, toDate
+                            }));
+                        } catch(e) {}
+                        window.location.href = data.detail.auth_url;
                         return;
                     }
                     throw new Error('Authentication required but no login URL received.');
@@ -194,42 +723,44 @@
 
                 if (!response.ok) {
                     const data = await response.json();
-                    throw new Error(data.detail || 'Download failed');
+                    const detail = data.detail;
+                    throw new Error(typeof detail === 'string' ? detail : (detail.message || 'Download failed'));
                 }
 
                 const blob = await response.blob();
-                const contentDisposition = response.headers.get('Content-Disposition');
-                let filename = `data_${resolution}m_${fromDate}_to_${toDate}.csv`;
-                if (contentDisposition) {
-                    const match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
-                    if (match && match[1]) filename = decodeURIComponent(match[1]);
+                const cd = response.headers.get('Content-Disposition');
+                let filename = 'data_' + resolution + 'm_' + fromDate + '_to_' + toDate + '.csv';
+                if (cd) {
+                    const m = cd.match(/filename\*=UTF-8''([^;]+)/);
+                    if (m && m[1]) filename = decodeURIComponent(m[1]);
                 }
 
-                const windowUrl = window.URL || window.webkitURL;
+                const url = (window.URL || window.webkitURL).createObjectURL(blob);
                 const link = document.createElement('a');
-                link.href = windowUrl.createObjectURL(blob);
+                link.href = url;
                 link.download = filename;
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
+                URL.revokeObjectURL(url);
 
-                successMsg.style.display = 'block';
-                setTimeout(() => { successMsg.style.display = 'none'; }, 5000);
-
+                showSuccess('\u2713 ' + filename);
             } catch (error) {
-                errorMsg.textContent = error.message;
-                errorMsg.style.display = 'block';
+                showError(error.message);
             } finally {
                 btn.disabled = false;
-                btnText.textContent = "Download CSV Data";
-                document.querySelector('.download-icon').style.display = 'block';
-                loader.style.display = "none";
+                btn.classList.remove('btn-download--loading');
+                btnText.textContent = 'Download CSV';
+                dlIcon.style.display = '';  // reset to CSS default (not 'block')
+                loader.style.display = 'none';
             }
         });
 
-        // --- Symbol Search Autocomplete ---
-        const symbolInput = document.getElementById('symbolSearch');
-        const dropdown = document.getElementById('symbolDropdown');
+        /* ═══════════════════════════════════════════════════════
+           Symbol Autocomplete
+           ═══════════════════════════════════════════════════════ */
+        const symbolInput = $('#symbolSearch');
+        const dropdown    = $('#symbolDropdown');
         let debounceTimer;
 
         document.addEventListener('click', (e) => {
@@ -238,75 +769,138 @@
             }
         });
 
-        symbolInput.addEventListener('input', (e) => {
-            const query = e.target.value;
+        symbolInput.addEventListener('input', () => {
+            const query = symbolInput.value;
             clearTimeout(debounceTimer);
-
-            if (query.length < 3) {
-                dropdown.style.display = 'none';
-                return;
-            }
+            if (query.length < 3) { dropdown.style.display = 'none'; return; }
 
             debounceTimer = setTimeout(async () => {
                 try {
-                    const res = await fetch(`/api/symbols?query=${encodeURIComponent(query)}`);
+                    const res = await fetch('/api/symbols?query=' + encodeURIComponent(query));
                     if (!res.ok) return;
                     const data = await res.json();
-
                     dropdown.innerHTML = '';
+
                     if (data.symbols && data.symbols.length > 0) {
                         data.symbols.forEach(sym => {
                             const div = document.createElement('div');
-                            div.className = 'dropdown-item';
-                            div.innerHTML = `<strong>${sym.name}</strong><br><small style="color:#64748b">${sym.symbol}</small>`;
+                            div.className = 'dropdown__item';
+                            // Use textContent for safety, build structure manually
+                            const nameSpan = document.createElement('span');
+                            nameSpan.className = 'dropdown__name';
+                            nameSpan.textContent = sym.name;
+                            const symSpan = document.createElement('span');
+                            symSpan.className = 'dropdown__sym';
+                            symSpan.textContent = sym.symbol;
+                            div.appendChild(nameSpan);
+                            div.appendChild(symSpan);
                             div.addEventListener('click', () => {
                                 symbolInput.value = sym.symbol;
                                 dropdown.style.display = 'none';
+                                symbolInput.focus();
                             });
                             dropdown.appendChild(div);
                         });
                         dropdown.style.display = 'block';
                     } else {
-                        dropdown.innerHTML = '<div style="padding: 12px; color: #64748b; text-align: center;">No matches found</div>';
+                        const empty = document.createElement('div');
+                        empty.className = 'dropdown__empty';
+                        empty.textContent = 'No matching contracts found';
+                        dropdown.appendChild(empty);
                         dropdown.style.display = 'block';
                     }
-                } catch (err) {
-                    console.error("Failed to fetch symbols", err);
-                }
-            }, 500);
+                } catch (err) { console.error('Symbol fetch failed', err); }
+            }, 400);
         });
 
-        // --- Page Initialization ---
-        window.addEventListener('DOMContentLoaded', () => {
-            const today = new Date();
-            const dd = String(today.getDate()).padStart(2, '0');
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const yyyy = today.getFullYear();
-            document.getElementById('toDate').value = `${dd}-${mm}-${yyyy}`;
+        /* ═══════════════════════════════════════════════════════
+           Quick Range Pills
+           ═══════════════════════════════════════════════════════ */
+        $$('.pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                $$('.pill').forEach(p => p.classList.remove('pill--active'));
+                pill.classList.add('pill--active');
+                const days  = parseInt(pill.dataset.days);
+                const today = new Date();
+                const start = new Date(today);
+                start.setDate(start.getDate() - days);
+                $('#fromDate').value = formatDate(start);
+                $('#toDate').value   = formatDate(today);
+                // Clear any date errors
+                setFieldError('fromDate', '');
+                setFieldError('toDate', '');
+            });
+        });
 
+        /* ═══════════════════════════════════════════════════════
+           Topbar scroll effect
+           ═══════════════════════════════════════════════════════ */
+        window.addEventListener('scroll', () => {
+            $('#topbar').classList.toggle('topbar--scrolled', window.scrollY > 20);
+        }, { passive: true });
+
+        /* ═══════════════════════════════════════════════════════
+           Entrance animations
+           ═══════════════════════════════════════════════════════ */
+        function staggerReveal() {
+            $$('.hero__tag, .hero__title, .hero__sub, .card, .feature').forEach((el, i) => {
+                el.style.animationDelay = (i * 0.08 + 0.1) + 's';
+                el.classList.add('reveal');
+            });
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           Init
+           ═══════════════════════════════════════════════════════ */
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup date auto-formatting
+            setupDateAutoFormat($('#fromDate'));
+            setupDateAutoFormat($('#toDate'));
+
+            // Set default dates
+            const today = new Date();
             const lastWeek = new Date(today);
             lastWeek.setDate(lastWeek.getDate() - 7);
-            const lw_dd = String(lastWeek.getDate()).padStart(2, '0');
-            const lw_mm = String(lastWeek.getMonth() + 1).padStart(2, '0');
-            const lw_yyyy = lastWeek.getFullYear();
-            document.getElementById('fromDate').value = `${lw_dd}-${lw_mm}-${lw_yyyy}`;
+            $('#toDate').value   = formatDate(today);
+            $('#fromDate').value = formatDate(lastWeek);
+            $('.pill[data-days="7"]').classList.add('pill--active');
 
-            // Check auth status on load
+            // Theme toggle
+            $('#themeToggle').addEventListener('click', () => {
+                const cur = document.documentElement.getAttribute('data-theme');
+                applyTheme(cur === 'dark' ? 'light' : 'dark');
+            });
+
+            // Auth check
             checkAuthStatus();
 
-            // Show success toast if returning from OAuth callback
+            // Entrance animations
+            staggerReveal();
+
+            // Handle OAuth callback return
             const params = new URLSearchParams(window.location.search);
             if (params.get('auth') === 'success') {
-                const successMsg = document.getElementById('success-msg');
-                successMsg.textContent = '✅ Authenticated! You can now download data.';
-                successMsg.style.display = 'block';
-                setTimeout(() => { successMsg.style.display = 'none'; }, 5000);
-                // Clean URL without reloading
-                window.history.replaceState({}, '', '/frontend/');
-                // Refresh auth badge
+                showSuccess('\u2713 Authenticated! You can now download data.');
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
                 checkAuthStatus();
+
+                // Restore form state if saved before redirect
+                try {
+                    const saved = sessionStorage.getItem('mcx_form');
+                    if (saved) {
+                        const s = JSON.parse(saved);
+                        if (s.symbol)     $('#symbolSearch').value = s.symbol;
+                        if (s.resolution) $('#resolution').value   = s.resolution;
+                        if (s.fromDate)   $('#fromDate').value     = s.fromDate;
+                        if (s.toDate)     $('#toDate').value       = s.toDate;
+                        sessionStorage.removeItem('mcx_form');
+                    }
+                } catch(e) {}
             }
         });
+
+    })();
     </script>
 </body>
 
