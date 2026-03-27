@@ -7,6 +7,16 @@ It features both a robust **Command Line Interface (CLI)** and a gorgeous **Web 
 ![MCX Extractor UI Demo](https://img.shields.io/badge/UI-Glassmorphism-blue)
 ![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![License MIT](https://img.shields.io/badge/license-MIT-green)
+![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)
+
+---
+
+## 🛠️ Built With / Tech Stack
+
+- **[Python](https://www.python.org/)**: Core backend logic for async scheduling and chunking.
+- **[FastAPI](https://fastapi.tiangolo.com/)**: High-performance asynchronous web framework powering the UI.
+- **Vanilla JS**: Clean, dependency-free frontend with Glassmorphism styling.
+- **[Fyers API v3](https://myapi.fyers.in/)**: Official broker API for historical data extraction.
 
 ---
 
@@ -70,6 +80,28 @@ It features both a robust **Command Line Interface (CLI)** and a gorgeous **Web 
 
 Authentication is handled entirely through the browser — **no terminal interaction required**.
 
+```mermaid
+sequenceDiagram
+    participant User
+    participant App
+    participant Fyers
+    
+    User->>App: Click Download
+    alt No valid token
+        App->>Fyers: Redirect to Fyers Login
+        User->>Fyers: Enter Credentials & PIN
+        Fyers-->>App: Auto-redirect with Auth Code
+        App->>Fyers: Exchange Code for Access Token
+        Fyers-->>App: Return Access Token
+        App->>App: Save cache to token.json
+        App-->>User: Show ✅ Authenticated
+    else Valid token exists
+        App->>Fyers: Token Validation Check
+        Fyers-->>App: Token Valid
+        App-->>User: Show ✅ Authenticated
+    end
+```
+
 1. **Click Download** on the Web UI. If no valid token exists, you'll be redirected to the Fyers login page.
 2. **Log in** with your Fyers credentials (Client ID + 4-digit PIN).
 3. **Auto-redirect**: After login, Fyers redirects back to the app which automatically captures your auth code, generates a token, and saves it.
@@ -92,6 +124,14 @@ The easiest way to extract data is using the interactive local web server.
 4. Select your desired **Resolution/Timeframe** (e.g., 1 Minute, 5 Minutes, Daily).
 5. Select your date ranges and click Download! The CSV will immediately compile and save to your computer.
 
+### Sample Output (`gold_1min.csv`)
+```csv
+timestamp,open,high,low,close,volume
+2024-01-01 09:00:00,63240,63245,63210,63230,1250
+2024-01-01 09:01:00,63230,63255,63225,63248,850
+2024-01-01 09:02:00,63248,63260,63240,63252,900
+```
+
 ---
 
 ## ⌨️ CLI Usage
@@ -111,6 +151,14 @@ python main.py --symbol MCX:GOLD25JUNFUT --from 2024-06-01 --to 2024-09-30 --out
 
 **Supported Resolutions:**
 `1`, `2`, `3`, `5`, `10`, `15`, `20`, `30`, `60`, `120`, `240`, `1D`
+
+---
+
+## ❓ Troubleshooting / FAQ
+
+- **"Invalid Redirect URI" Error**: Make sure you've exactly matched `http://127.0.0.1:8000/api/auth/callback` in your Fyers App Redirect URI settings.
+- **Token Expiry**: The token cached in `token.json` lasts until the end of the day. If it expires, the app will seamlessly prompt you to log in again.
+- **Rate Limit Errors**: Fyers has strict limits on historical API calls. The script uses exponential backoff and chunking to manage it, but if you hit extreme limits, wait a minute for limits to reset before retrying.
 
 ---
 
