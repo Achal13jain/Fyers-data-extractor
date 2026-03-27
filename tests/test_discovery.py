@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from discovery import fetch_mcx_master, get_latest_gold_symbol, _master_cache
+from fyers_extractor.discovery import fetch_mcx_master, get_latest_gold_symbol, _master_cache
 
 
 # A minimal CSV snippet that mimics the Fyers MCX master format.
@@ -44,7 +44,7 @@ def _mock_urlopen(csv_content: str) -> MagicMock:
 class TestFetchMcxMaster:
     """Verifies the cached CSV fetcher."""
 
-    @patch("discovery.urllib.request.urlopen")
+    @patch("fyers_extractor.discovery.urllib.request.urlopen")
     def test_returns_parsed_rows(self, mock_open) -> None:
         """Should return all rows from the CSV."""
         mock_open.return_value = _mock_urlopen(MOCK_CSV)
@@ -53,7 +53,7 @@ class TestFetchMcxMaster:
         assert rows[0]["name"] == "GOLD 04 Apr 26 FUT"
         assert rows[0]["symbol"] == "MCX:GOLD26APRFUT"
 
-    @patch("discovery.urllib.request.urlopen")
+    @patch("fyers_extractor.discovery.urllib.request.urlopen")
     def test_cache_prevents_second_download(
         self, mock_open,
     ) -> None:
@@ -64,7 +64,7 @@ class TestFetchMcxMaster:
         # urlopen should only be called once
         assert mock_open.call_count == 1
 
-    @patch("discovery.urllib.request.urlopen")
+    @patch("fyers_extractor.discovery.urllib.request.urlopen")
     def test_cache_expires(self, mock_open) -> None:
         """After TTL expires, the CSV should be re-fetched."""
         mock_open.return_value = _mock_urlopen(MOCK_CSV)
@@ -79,7 +79,7 @@ class TestFetchMcxMaster:
 class TestGetLatestGoldSymbol:
     """Verifies Gold-specific auto-discovery."""
 
-    @patch("discovery.urllib.request.urlopen")
+    @patch("fyers_extractor.discovery.urllib.request.urlopen")
     def test_selects_nearest_gold_future(
         self, mock_open,
     ) -> None:
@@ -90,7 +90,7 @@ class TestGetLatestGoldSymbol:
         # GOLD Apr (1743724200) is earlier than GOLD Jun
         assert symbol == "MCX:GOLD26APRFUT"
 
-    @patch("discovery.urllib.request.urlopen")
+    @patch("fyers_extractor.discovery.urllib.request.urlopen")
     def test_excludes_goldguinea(self, mock_open) -> None:
         """GOLDGUINEA should not match the 'GOLD ' prefix
         filter."""
@@ -98,7 +98,7 @@ class TestGetLatestGoldSymbol:
         symbol = get_latest_gold_symbol()
         assert "GUINEA" not in symbol
 
-    @patch("discovery.urllib.request.urlopen")
+    @patch("fyers_extractor.discovery.urllib.request.urlopen")
     def test_raises_when_no_gold_found(
         self, mock_open,
     ) -> None:

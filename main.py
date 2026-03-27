@@ -4,10 +4,10 @@ import argparse
 import sys
 from datetime import datetime
 
-from config import DEFAULT_OUTPUT_FILE
-from discovery import get_latest_gold_symbol
-from downloader import FyersDownloader
-from utils import setup_logger
+from fyers_extractor.config import DEFAULT_OUTPUT_FILE
+from fyers_extractor.discovery import get_latest_gold_symbol
+from fyers_extractor.downloader import FyersDownloader
+from fyers_extractor.utils import setup_logger
 
 VALID_RESOLUTIONS = {
     "1", "2", "3", "5", "10", "15",

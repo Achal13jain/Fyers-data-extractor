@@ -13,13 +13,13 @@ from typing import Optional
 
 from fyers_apiv3 import fyersModel
 
-from config import (
+from .config import (
     FYERS_CLIENT_ID,
     FYERS_SECRET_KEY,
     FYERS_REDIRECT_URI,
     TOKEN_FILE_PATH,
 )
-from utils import setup_logger
+from .utils import setup_logger
 
 logger = setup_logger(__name__)
 

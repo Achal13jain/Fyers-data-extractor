@@ -8,9 +8,9 @@ import pandas as pd
 from fyers_apiv3 import fyersModel
 from tqdm import tqdm
 
-from config import FYERS_CLIENT_ID, FYERS_MAX_DAYS_PER_REQUEST
-from utils import chunk_date_range, setup_logger
-from auth import authenticate
+from .config import FYERS_CLIENT_ID, FYERS_MAX_DAYS_PER_REQUEST
+from .utils import chunk_date_range, setup_logger
+from .auth import authenticate
 
 logger = setup_logger(__name__)
 
