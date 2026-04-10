@@ -23,6 +23,9 @@ It features both a robust **Command Line Interface (CLI)** and a gorgeous **Web 
 ## ✨ Features
 
 - **Beautiful Web Interface**: A modern, interactive web portal that makes downloading data as simple as point-and-click.
+
+![UI Screenshot](UI.png)
+
 - **Smart Symbol Auto-Discovery**: Automatically parses the live Fyers MCX Master CSV to search, dropdown, or auto-detect active continuous future contracts (e.g., `MCX:CRUDEOIL26MARFUT`).
 - **Data Chunking**: Automatically bypasses Fyers' 100-day limit per request by securely chunking dates behind the scenes.
 - **Robust Retries**: Handles API rate-limiting and connection failures gracefully using exponential backoff.
